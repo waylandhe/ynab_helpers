@@ -1,10 +1,15 @@
 require './app/foundation.rb'
+require 'fuzzy_match'
 
-date, amount, category, memo = *ARGV[0...4]
+date, payee, amount, category, memo = *ARGV[0...4]
 tax_rate = 1.0975
+
+
+
 
 txn = YNAB::SaveTransaction.new(
   account_id: ACCOUNT_IDS[:chime][:checking],
+  payee_name: '',
   date: date,
   amount:(amount.to_f*1000).to_i,
   category_id: category_id(category),
