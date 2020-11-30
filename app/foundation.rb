@@ -27,6 +27,7 @@ def category_id(text)
   when 'fo' then 'efe7b513-659f-4544-8c06-a446fdefd0d6'
   when 'g' then '62c7fd06-ef93-4284-91d3-2692f627e9be' # groceries
   when 'gas' then '0d2c3d01-f165-4f8c-a4f5-9eeea6fff139'
+  when 'hg' then 'fb0d21aa-ea69-4076-abc0-c3692b79d8de'
   else nil
   end
 end
