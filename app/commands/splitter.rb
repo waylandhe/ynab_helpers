@@ -1,7 +1,10 @@
 require './app/foundation.rb'
 
 logger = Logger.new(STDOUT)
+
+# logger.level = Logger::DEBUG
 logger.level = Logger::WARN
+
 date, amount, memo, csv_filename, tax_rate = *ARGV[0...5]
 
 tax_rate = 1 + (tax_rate.to_f / 100)
@@ -40,14 +43,15 @@ begin
 rescue => exception
   if exception.response_body.include? 'amount must equal the sum of subtransaction amounts'
     subtxns_total = txns_wrapper.transaction.subtransactions.sum(&:amount)
+    txn_total = txns_wrapper.transaction.amount
     logger.debug "__ERROR__ #{exception.response_body}"
-    logger.debug "__TOTAL__ #{subtxns_total}"
+    logger.debug "subtxns_total: #{subtxns_total}, txn_total: #{txn_total}"
     logger.debug txns_wrapper
-    if subtxns_total > txns_wrapper.transaction.amount
-      if abs(subtxns_total - txns_wrapper.transaction.amount) > 50
+    if subtxns_total > txn_total
+      if (subtxns_total - txn_total).abs > 50
         raise "cent difference is too large... something is fishy. maybe wrong tax rate?"
       else
-        cents_to_subtract = (subtxns_total - txns_wrapper.transaction.amount) / 10
+        cents_to_subtract = (subtxns_total - txn_total) / 10
         logger.error "cents to subtract: #{cents_to_subtract}"
       end
     else
