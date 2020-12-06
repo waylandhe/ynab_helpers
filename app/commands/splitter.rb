@@ -1,7 +1,11 @@
 require './app/foundation.rb'
 
-date, amount, memo, csv_filename = *ARGV[0...4]
-tax_rate = 1.0925
+logger = Logger.new(STDOUT)
+logger.level = Logger::WARN
+date, amount, memo, csv_filename, tax_rate = *ARGV[0...5]
+
+tax_rate = 1 + (tax_rate.to_f / 100)
+
 
 csv_text = File.read("#{csv_filename}")
 csv = CSV.parse(csv_text, headers: true)
@@ -25,7 +29,8 @@ txn = YNAB::SaveTransaction.new(
   account_id: ACCOUNT_IDS[:chime][:checking],
   date: date,
   amount:(amount.to_f*1000).to_i,
-  subtransactions: subtxns
+  subtransactions: subtxns,
+  memo: memo
 )
 
 txns_wrapper = YNAB::SaveTransactionsWrapper.new(transaction: txn)
@@ -34,11 +39,22 @@ begin
   create_roundup_transfer(txn)
 rescue => exception
   if exception.response_body.include? 'amount must equal the sum of subtransaction amounts'
-    puts "__TOTAL__#{txns_wrapper.transaction.subtransactions.sum(&:amount)}"
-    pp txns_wrapper
-    raise
+    subtxns_total = txns_wrapper.transaction.subtransactions.sum(&:amount)
+    logger.debug "__ERROR__ #{exception.response_body}"
+    logger.debug "__TOTAL__ #{subtxns_total}"
+    logger.debug txns_wrapper
+    if subtxns_total > txns_wrapper.transaction.amount
+      if abs(subtxns_total - txns_wrapper.transaction.amount) > 50
+        raise "cent difference is too large... something is fishy. maybe wrong tax rate?"
+      else
+        cents_to_subtract = (subtxns_total - txns_wrapper.transaction.amount) / 10
+        logger.error "cents to subtract: #{cents_to_subtract}"
+      end
+    else
+      raise "subtxns_total < txns_wrapper.transaction.amount"
+    end
   else
-    puts "__ERROR__#{exception.response_body}"
+    logger.fatal "__ERROR__#{exception.response_body}"
     raise
   end
 end

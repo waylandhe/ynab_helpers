@@ -1,6 +1,7 @@
 require './environment.rb'
 
 require 'csv'
+require 'logger' # https://ruby-doc.org/stdlib-2.4.0/libdoc/logger/rdoc/Logger.html
 require 'ynab'
 
 require 'pry'
@@ -39,7 +40,8 @@ def roundup_transfer(saved_transaction)
     account_id: ACCOUNT_IDS[:chime][:checking],
     payee_id: TRANSFER_PAYEES[:chime][:savings],
     date: saved_transaction.date,
-    amount: amount
+    amount: amount,
+    memo: saved_transaction.memo
   )
 end
 
@@ -49,6 +51,8 @@ def create_roundup_transfer(saved_transaction)
     return
   end
 
-  roundup_txn_wrapper = YNAB::SaveTransactionsWrapper.new(transaction: roundup_transfer(saved_transaction))
+  roundup_txn_wrapper = YNAB::SaveTransactionsWrapper.new(
+    transaction: roundup_transfer(saved_transaction)
+  )
   ynab_api.transactions.create_transaction(MAIN_BUDGET_ID, roundup_txn_wrapper)
 end
