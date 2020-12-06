@@ -22,7 +22,7 @@ subtxns = csv.map do |row|
                    row['amount']
                  end
   YNAB::SaveSubTransaction.new(
-    amount: (final_amount*1000).to_i,
+    amount: -(final_amount*1000).to_i,
     category_id: category_id(row['category']),
     memo: row['memo']
   )
@@ -31,7 +31,7 @@ end
 txn = YNAB::SaveTransaction.new(
   account_id: ACCOUNT_IDS[:chime][:checking],
   date: date,
-  amount:(amount.to_f*1000).to_i,
+  amount:-(amount.to_f*1000).to_i,
   subtransactions: subtxns,
   memo: memo
 )
